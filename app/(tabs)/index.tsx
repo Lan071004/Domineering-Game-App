@@ -1,74 +1,117 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const gridSize = 10;
+const { width } = Dimensions.get('window'); 
+const cellSize = width / (gridSize + 2);
 
-export default function HomeScreen() {
+const App = () => {
+  const createEmptyBoard = () => Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+
+  const [board, setBoard] = useState<(string | null)[][]>(createEmptyBoard());
+  const [currentPlayer, setCurrentPlayer] = useState<'V' | 'H'>('V');
+  const [gameOver, setGameOver] = useState(false);
+
+  const handleCellClick = (row: number, col: number) => {
+    if (gameOver || board[row][col] !== null) return;
+    const newBoard = board.map((rowArr) => [...rowArr]);
+
+    if (currentPlayer === 'V') {
+      if (row < gridSize - 1 && newBoard[row][col] === null && newBoard[row + 1][col] === null) {
+        newBoard[row][col] = 'V';
+        newBoard[row + 1][col] = 'V';
+        setBoard(newBoard);
+        setCurrentPlayer('H');
+      }
+    } else if (currentPlayer === 'H') {
+      if (col < gridSize - 1 && newBoard[row][col] === null && newBoard[row][col + 1] === null) {
+        newBoard[row][col] = 'H';
+        newBoard[row][col + 1] = 'H';
+        setBoard(newBoard);
+        setCurrentPlayer('V');
+      }
+    }
+    checkGameOver(newBoard);
+  };
+
+  const checkGameOver = (newBoard: (string | null)[][]) => {
+    let validMoveFound = false;
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        if (currentPlayer === 'V' && row < gridSize - 1 && newBoard[row][col] === null && newBoard[row + 1][col] === null) {
+          validMoveFound = true;
+          break;
+        }
+        if (currentPlayer === 'H' && col < gridSize - 1 && newBoard[row][col] === null && newBoard[row][col + 1] === null) {
+          validMoveFound = true;
+          break;
+        }
+      }
+    }
+    if (!validMoveFound) setGameOver(true);
+  };
+
+  const renderBoard = () => {
+    return board.map((row, rowIndex) => (
+      <View key={rowIndex} style={styles.boardRow}>
+        {row.map((cell, colIndex) => (
+          <TouchableOpacity
+            key={colIndex}
+            style={[
+              styles.cell,
+              { width: cellSize, height: cellSize },
+              cell === 'V' ? styles.cellV : cell === 'H' ? styles.cellH : {},
+            ]}
+            onPress={() => handleCellClick(rowIndex, colIndex)}
+          />
+        ))}
+      </View>
+    ));
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Domineering Game</Text>
+      <Text style={styles.subtitle}>Current Player: {currentPlayer}</Text>
+      {renderBoard()}
+      {gameOver && <Text style={styles.subtitle}>Game over! Player {currentPlayer === 'V' ? 'H' : 'V'} wins!</Text>}
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#080808',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  boardRow: {
+    flexDirection: 'row',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  cell: {
+    borderWidth: 1,
+    borderColor: '#000000',
+    backgroundColor: '#fafafa',
+  },
+  cellV: {
+    backgroundColor: '#ffd700',
+  },
+  cellH: {
+    backgroundColor: '#ef007f',
+  },
+  title: {
+    fontSize: width * 0.06, 
+    color: 'rgb(20, 209, 243)',
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: width * 0.045,
+    color: 'rgb(20, 243, 150)',
+    marginBottom: 10,
   },
 });
+
+export default App;
