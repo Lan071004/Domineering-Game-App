@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 const gridSize = 10;
-const { width } = Dimensions.get('window'); 
-const cellSize = width / (gridSize + 2);
 
 const App = () => {
-  const createEmptyBoard = () => Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+  const createEmptyBoard = () => {
+    return Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+  };
 
   const [board, setBoard] = useState<(string | null)[][]>(createEmptyBoard());
   const [currentPlayer, setCurrentPlayer] = useState<'V' | 'H'>('V');
@@ -36,19 +36,25 @@ const App = () => {
 
   const checkGameOver = (newBoard: (string | null)[][]) => {
     let validMoveFound = false;
+    
     for (let row = 0; row < gridSize; row++) {
       for (let col = 0; col < gridSize; col++) {
-        if (currentPlayer === 'V' && row < gridSize - 1 && newBoard[row][col] === null && newBoard[row + 1][col] === null) {
-          validMoveFound = true;
-          break;
-        }
-        if (currentPlayer === 'H' && col < gridSize - 1 && newBoard[row][col] === null && newBoard[row][col + 1] === null) {
-          validMoveFound = true;
-          break;
+        if (currentPlayer === 'V') {
+          if (row < gridSize - 1 && newBoard[row][col] === null && newBoard[row + 1][col] === null) {
+            validMoveFound = true;
+            break;
+          }
+        } else if (currentPlayer === 'H') {
+          if (col < gridSize - 1 && newBoard[row][col] === null && newBoard[row][col + 1] === null) {
+            validMoveFound = true;
+            break;
+          }
         }
       }
+    } 
+    if (!validMoveFound){
+      setGameOver(true);
     }
-    if (!validMoveFound) setGameOver(true);
   };
 
   const renderBoard = () => {
@@ -59,7 +65,6 @@ const App = () => {
             key={colIndex}
             style={[
               styles.cell,
-              { width: cellSize, height: cellSize },
               cell === 'V' ? styles.cellV : cell === 'H' ? styles.cellH : {},
             ]}
             onPress={() => handleCellClick(rowIndex, colIndex)}
@@ -74,9 +79,13 @@ const App = () => {
       <Text style={styles.title}>Domineering Game</Text>
       <Text style={styles.subtitle}>Current Player: {currentPlayer}</Text>
       {renderBoard()}
-      {gameOver && <Text style={styles.subtitle}>Game over! Player {currentPlayer === 'V' ? 'H' : 'V'} wins!</Text>}
+      {gameOver && (
+        <Text style={styles.subtitle}>
+          Game over! Player {currentPlayer === 'V' ? 'H' : 'V'} wins!
+        </Text>
+      )}
     </View>
-  );
+  );  
 };
 
 const styles = StyleSheet.create({
@@ -91,24 +100,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   cell: {
+    width: 40,
+    height: 40,
     borderWidth: 1,
     borderColor: '#000000',
     backgroundColor: '#fafafa',
+    alignItems: 'center',
+    justifyContent: 'center',
+
   },
   cellV: {
-    backgroundColor: '#ffd700',
+    backgroundColor: '#ffd700', // Vertical dominoes
   },
   cellH: {
-    backgroundColor: '#ef007f',
+    backgroundColor: '#ef007f', // Horizontal dominoes
   },
   title: {
-    fontSize: width * 0.06, 
+    fontSize: 24,
     color: 'rgb(20, 209, 243)',
     fontWeight: 'bold',
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: width * 0.045,
+    fontSize: 18,
     color: 'rgb(20, 243, 150)',
     marginBottom: 10,
   },
